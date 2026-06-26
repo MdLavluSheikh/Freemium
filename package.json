@@ -7,9 +7,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "sync-channels": "node scripts/fetch-channels.mjs",
-    "build-channels": "node scripts/build-channels.mjs",
-    "sync-db": "node scripts/sync-db.mjs",
     "postinstall": "node scripts/build-channels.mjs"
   },
   "dependencies": {
