@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #050816;
+  --color-secondary: #0B1120;
+  --color-card: rgba(255, 255, 255, 0.05);
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-live: #FF3B30;
+  --color-success: #22C55E;
+  --color-warning: #F59E0B;
+  --color-accent: #EF4444;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --max-width-7-5xl: 1152px;
+}
+
+@layer base {
+  * { @apply border-white/10 }
+  body {
+    @apply bg-[#050816] text-zinc-100 antialiased;
+    font-family: var(--font-sans);
+  }
+  ::selection { @apply bg-red-500/30 }
+  ::-webkit-scrollbar { width: 6px; height: 6px }
+  ::-webkit-scrollbar-track { background: transparent }
+  ::-webkit-scrollbar-thumb { @apply bg-white/10 rounded-full hover:bg-white/20 }
+}
+
+:-webkit-full-screen video,
+:-moz-full-screen video,
+:fullscreen video {
+  width: 100vw;
+  height: 100vh;
+  object-fit: contain;
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/[0.04] backdrop-blur-xl border border-white/[0.06];
+  }
+  .glass-hover {
+    @apply hover:bg-white/[0.08] transition-colors;
+  }
+  .text-gradient {
+    @apply bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent;
+  }
+  .card-glow {
+    @apply relative overflow-hidden;
+  }
+  .card-glow::before {
+    content: '';
+    @apply absolute -inset-[1px] rounded-[inherit] bg-gradient-to-br from-red-500/0 via-red-500/0 to-red-500/0 opacity-0 transition-all duration-500;
+  }
+  .card-glow:hover::before {
+    @apply opacity-100 from-red-500/20 via-transparent to-red-500/10;
+  }
+}
