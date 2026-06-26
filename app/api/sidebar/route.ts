@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
+import { getAllChannels, searchChannels, getChannelsByGroup } from '@/lib/data'
 
 export const dynamic = 'force-dynamic'
 
-// Category mapping: maps group names to standard categories
 const CATEGORY_RULES: { category: string; keywords: string[]; priority: number }[] = [
   { category: 'FIFA', keywords: ['fifa', 'world cup'], priority: 0 },
   { category: 'Sports', keywords: ['sports', 'sport'], priority: 1 },
@@ -64,46 +63,32 @@ export async function GET(req: NextRequest) {
   const groupFilter = searchParams.get('group') || ''
   const limit = parseInt(searchParams.get('limit') || '500', 10)
 
-  const db = getDb()
-  let rows: any[]
+  let rows: { name: string; url: string; logo: string; group: string }[]
 
   if (groupFilter) {
-    // Filter by exact group (used on watch page sidebar to show only channels from that exact group)
-    rows = db.prepare(`
-      SELECT * FROM channels 
-      WHERE group_name = ?
-      ORDER BY name 
-    `).all(groupFilter)
+    rows = getChannelsByGroup(groupFilter)
   } else if (search) {
-    rows = db.prepare(`
-      SELECT * FROM channels 
-      WHERE name LIKE ? OR group_name LIKE ? 
-      ORDER BY name 
-      LIMIT ?
-    `).all(`%${search}%`, `%${search}%`, limit)
+    rows = searchChannels(search, limit)
   } else {
-    rows = db.prepare('SELECT * FROM channels LIMIT ?').all(limit)
+    rows = getAllChannels().slice(0, limit)
   }
 
-  // Group channels by category
   const grouped: Record<string, any[]> = {}
   for (const ch of rows) {
-    const { name } = getCategory(ch.group_name)
+    const { name } = getCategory(ch.group)
     if (!grouped[name]) grouped[name] = []
     grouped[name].push({
       name: ch.name,
       url: ch.url,
       logo: ch.logo,
-      group: ch.group_name,
+      group: ch.group,
     })
   }
 
-  // Sort channels alphabetically within each category
   for (const cat of Object.keys(grouped)) {
     grouped[cat].sort((a: any, b: any) => a.name.localeCompare(b.name))
   }
 
-  // Build ordered result: categories sorted by priority
   const categoryOrder = CATEGORY_RULES.map(r => r.category).concat([DEFAULT_CATEGORY])
   const ordered: { category: string; channels: any[]; count: number }[] = []
   const seen = new Set<string>()
@@ -115,7 +100,6 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Add any remaining categories
   for (const cat of Object.keys(grouped)) {
     if (!seen.has(cat)) {
       ordered.push({ category: cat, channels: grouped[cat], count: grouped[cat].length })

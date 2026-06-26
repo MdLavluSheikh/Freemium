@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getChannelsPaginated, getDb } from '@/lib/db'
+import { getChannelsPaginated } from '@/lib/data'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
       name: ch.name,
       url: ch.url,
       logo: ch.logo,
-      group: ch.group_name,
+      group: ch.group,
     })),
     total,
     page,

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
-export const runtime = 'nodejs'
 
 function getRefererForUrl(url: string): string | undefined {
   if (url.includes('gpcdn.net')) return 'https://www.goplay.com.bd/'
