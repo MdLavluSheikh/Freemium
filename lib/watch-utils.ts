@@ -3,10 +3,9 @@ export interface WatchParams {
   name: string
   logo: string
   group: string
+  useProxy?: boolean
 }
 
-// Deterministic hash function - generates short alphanumeric codes (client & server compatible)
-// Same input URL always gives the same short code
 export function hashChannelUrl(url: string): string {
   let hash = 0
   for (let i = 0; i < url.length; i++) {

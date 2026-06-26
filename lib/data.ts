@@ -6,6 +6,7 @@ export interface Channel {
   url: string
   logo: string
   group: string
+  useProxy?: boolean
 }
 
 const allChannels: Channel[] = (channelsAll as any[]).map(ch => ({
@@ -13,6 +14,7 @@ const allChannels: Channel[] = (channelsAll as any[]).map(ch => ({
   url: ch.url,
   logo: ch.logo || '',
   group: ch.group || '',
+  useProxy: ch.useProxy === true,
 }))
 
 export function getAllChannels(): Channel[] {
@@ -52,5 +54,5 @@ export function getChannelByUrl(url: string): Channel | null {
 export function getWatchByCode(code: string): WatchParams | null {
   const ch = allChannels.find(c => c.url === code)
   if (!ch) return null
-  return { url: ch.url, name: ch.name, logo: ch.logo, group: ch.group }
+  return { url: ch.url, name: ch.name, logo: ch.logo, group: ch.group, useProxy: ch.useProxy }
 }

@@ -43,7 +43,7 @@ function WatchContent({ slug }: { slug: string }) {
     )
   }
 
-  const { url, name, logo, group } = params
+  const { url, name, logo, group, useProxy } = params
 
   return (
     <div className="flex flex-col lg:flex-row min-h-[calc(100vh-64px)] bg-[#050816] overflow-hidden">
@@ -53,7 +53,7 @@ function WatchContent({ slug }: { slug: string }) {
             <Link href="/channels" className="absolute top-3 left-3 z-10 p-2 rounded-lg bg-black/40 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/60 transition-all">
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            <Player src={url} channelName={name} autoPlay />
+            <Player src={url} channelName={name} autoPlay useProxy={useProxy} />
           </div>
         </div>
 

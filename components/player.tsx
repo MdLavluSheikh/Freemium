@@ -13,6 +13,7 @@ interface PlayerProps {
   poster?: string
   channelName?: string
   autoPlay?: boolean
+  useProxy?: boolean
 }
 
 function getRefererForUrl(url: string): string | undefined {
@@ -22,7 +23,7 @@ function getRefererForUrl(url: string): string | undefined {
   return undefined
 }
 
-export default function Player({ src, poster, channelName, autoPlay = true }: PlayerProps) {
+export default function Player({ src, poster, channelName, autoPlay = true, useProxy = false }: PlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const shakaRef = useRef<shaka.Player | null>(null)
@@ -100,8 +101,9 @@ export default function Player({ src, poster, channelName, autoPlay = true }: Pl
       }
     })
 
-    const isDash = src.toLowerCase().includes('.mpd')
-    const sourceUrl = isDash ? src : `/api/proxy/stream.m3u8?url=${encodeURIComponent(src)}`
+    const sourceUrl = useProxy
+      ? `/api/proxy/stream.m3u8?url=${encodeURIComponent(src)}`
+      : src
 
     player.load(sourceUrl).then(() => {
       if (cancelled) { player.destroy(); return }

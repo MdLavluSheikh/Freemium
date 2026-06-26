@@ -26,6 +26,7 @@ function getStore(): Map<string, WatchParams> {
           name: ch.name,
           logo: ch.logo || '',
           group: ch.group || '',
+          useProxy: ch.useProxy,
         })
       }
     }
