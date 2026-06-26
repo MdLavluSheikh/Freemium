@@ -20,6 +20,10 @@ jobs:
 
       - run: npm run build
 
-      - uses: cloudflare/wrangler-action@v3
+      - run: npx @opennextjs/cloudflare@latest build
+
+      - name: Deploy to Cloudflare
+        uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          command: deploy
