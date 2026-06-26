@@ -39,6 +39,7 @@ export default function Player({ src, poster, channelName, autoPlay = true }: Pl
   const [isPiP, setIsPiP] = useState(false)
   const [error, setError] = useState(false)
   const [errorDetail, setErrorDetail] = useState('')
+  const retryCount = useRef(0)
   const hideTimer = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
@@ -47,6 +48,7 @@ export default function Player({ src, poster, channelName, autoPlay = true }: Pl
 
     let cancelled = false
     let currentPlayer: shaka.Player | null = null
+    retryCount.current = 0
     setError(false)
     setErrorDetail('')
     setPlaying(false)
@@ -78,41 +80,37 @@ export default function Player({ src, poster, channelName, autoPlay = true }: Pl
       },
     })
 
-    player.addEventListener('error', (event) => {
+    function tryLoad(url: string) {
       if (cancelled) return
-      const detail = (event as any).detail
-      const code = detail?.code || 0
-      if (detail?.severity === 2) {
-        let msg = 'Playback error'
-        if (code >= 4000 && code < 5000) msg = 'DRM / Content not supported'
-        else if (code >= 3000 && code < 4000) msg = 'Streaming error'
-        else if (code >= 2000 && code < 3000) msg = 'Invalid stream source'
-        else if (code >= 1000 && code < 2000) msg = 'Network error'
-        setError(true)
-        setErrorDetail(`${msg} (${code})`)
-      }
-    })
+      const v = videoRef.current
+      if (!v) return
+      player.load(url).then(() => {
+        if (cancelled) { player.destroy(); return }
+        shakaRef.current = player
+        if (autoPlay) {
+          v.play().then(() => {
+            v.muted = false
+            setMuted(false)
+          }).catch(() => setPlaying(false))
+        }
+      }).catch((err: any) => {
+        if (retryCount.current === 0) {
+          retryCount.current = 1
+          v.removeAttribute('src')
+          tryLoad(src)
+        } else {
+          if (!cancelled) {
+            v.removeAttribute('src')
+            setError(true)
+            setErrorDetail(err.message || 'Failed to load stream')
+            player.destroy()
+            currentPlayer = null
+          }
+        }
+      })
+    }
 
-    const sourceUrl = src
-
-    player.load(sourceUrl).then(() => {
-      if (cancelled) { player.destroy(); return }
-      shakaRef.current = player
-      if (autoPlay) {
-        video.play().then(() => {
-          video.muted = false
-          setMuted(false)
-        }).catch(() => setPlaying(false))
-      }
-    }).catch((err: any) => {
-      if (!cancelled) {
-        video.removeAttribute('src')
-        setError(true)
-        setErrorDetail(err.message || 'Failed to load stream')
-        player.destroy()
-        currentPlayer = null
-      }
-    })
+    tryLoad(`/api/proxy/stream.m3u8?url=${encodeURIComponent(src)}`)
 
     return () => {
       cancelled = true
