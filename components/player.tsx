@@ -13,7 +13,6 @@ interface PlayerProps {
   poster?: string
   channelName?: string
   autoPlay?: boolean
-  useProxy?: boolean
 }
 
 function getRefererForUrl(url: string): string | undefined {
@@ -23,7 +22,7 @@ function getRefererForUrl(url: string): string | undefined {
   return undefined
 }
 
-export default function Player({ src, poster, channelName, autoPlay = true, useProxy = false }: PlayerProps) {
+export default function Player({ src, poster, channelName, autoPlay = true }: PlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const shakaRef = useRef<shaka.Player | null>(null)
@@ -63,13 +62,6 @@ export default function Player({ src, poster, channelName, autoPlay = true, useP
     const player = new shaka.Player(video)
     currentPlayer = player
 
-    const netEngine = player.getNetworkingEngine()
-    if (netEngine) {
-      netEngine.registerRequestFilter((_type: number, request: shaka.extern.Request) => {
-        // Headers are handled by the server-side proxy
-      })
-    }
-
     player.configure({
       drm: {
         servers: {},
@@ -101,9 +93,7 @@ export default function Player({ src, poster, channelName, autoPlay = true, useP
       }
     })
 
-    const sourceUrl = useProxy
-      ? `/api/proxy/stream.m3u8?url=${encodeURIComponent(src)}`
-      : src
+    const sourceUrl = src
 
     player.load(sourceUrl).then(() => {
       if (cancelled) { player.destroy(); return }
