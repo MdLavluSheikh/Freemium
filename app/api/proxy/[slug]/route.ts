@@ -69,7 +69,19 @@ export async function GET(req: NextRequest) {
 }
 
 export async function HEAD(req: NextRequest) {
-  return handleRequest(req)
+  // Shaka probes with HEAD — return 200 without fetching upstream
+  const { searchParams } = new URL(req.url)
+  const url = searchParams.get('url')
+  if (!url) return NextResponse.json({ error: 'Missing url' }, { status: 400 })
+  const isM3u8 = url.includes('.m3u8')
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Content-Type': isM3u8 ? 'application/vnd.apple.mpegurl' : 'application/octet-stream',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+    },
+  })
 }
 
 async function handleRequest(req: NextRequest) {

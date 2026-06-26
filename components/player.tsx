@@ -39,7 +39,6 @@ export default function Player({ src, poster, channelName, autoPlay = true }: Pl
   const [isPiP, setIsPiP] = useState(false)
   const [error, setError] = useState(false)
   const [errorDetail, setErrorDetail] = useState('')
-  const retryCount = useRef(0)
   const hideTimer = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
@@ -48,7 +47,6 @@ export default function Player({ src, poster, channelName, autoPlay = true }: Pl
 
     let cancelled = false
     let currentPlayer: shaka.Player | null = null
-    retryCount.current = 0
     setError(false)
     setErrorDetail('')
     setPlaying(false)
@@ -94,18 +92,12 @@ export default function Player({ src, poster, channelName, autoPlay = true }: Pl
           }).catch(() => setPlaying(false))
         }
       }).catch((err: any) => {
-        if (retryCount.current === 0) {
-          retryCount.current = 1
+        if (!cancelled) {
           v.removeAttribute('src')
-          tryLoad(src)
-        } else {
-          if (!cancelled) {
-            v.removeAttribute('src')
-            setError(true)
-            setErrorDetail(err.message || 'Failed to load stream')
-            player.destroy()
-            currentPlayer = null
-          }
+          setError(true)
+          setErrorDetail(err.message || 'Failed to load stream')
+          player.destroy()
+          currentPlayer = null
         }
       })
     }
