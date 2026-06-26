@@ -78,7 +78,7 @@ export default function Player({ src, poster, channelName, autoPlay = true }: Pl
       },
     })
 
-    function tryLoad(url: string) {
+    function tryLoad(url: string, isFallback = false) {
       if (cancelled) return
       const v = videoRef.current
       if (!v) return
@@ -92,17 +92,24 @@ export default function Player({ src, poster, channelName, autoPlay = true }: Pl
           }).catch(() => setPlaying(false))
         }
       }).catch((err: any) => {
-        if (!cancelled) {
+        if (!isFallback) {
+          // Direct failed — retry via proxy
           v.removeAttribute('src')
-          setError(true)
-          setErrorDetail(err.message || 'Failed to load stream')
-          player.destroy()
-          currentPlayer = null
+          tryLoad(`/api/proxy/stream.m3u8?url=${encodeURIComponent(src)}`, true)
+        } else {
+          if (!cancelled) {
+            v.removeAttribute('src')
+            setError(true)
+            setErrorDetail(err.message || 'Failed to load stream')
+            player.destroy()
+            currentPlayer = null
+          }
         }
       })
     }
 
-    tryLoad(`/api/proxy/stream.m3u8?url=${encodeURIComponent(src)}`)
+    // Try direct first, proxy as fallback
+    tryLoad(src)
 
     return () => {
       cancelled = true
