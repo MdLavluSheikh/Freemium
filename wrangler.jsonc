@@ -1,11 +1,24 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "freemium",
   "main": ".open-next/worker.js",
+  "name": "freemium",
   "compatibility_date": "2026-06-26",
   "compatibility_flags": [
     "nodejs_compat"
   ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "freemium"
+    }
+  ],
+  "images": {
+    "binding": "IMAGES"
+  },
   "observability": {
     "enabled": true
   }
