@@ -16,7 +16,7 @@ jobs:
           node-version: 22
           cache: npm
 
-      - run: npm clean-install
+      - run: npm install --ignore-scripts --no-audit --no-fund
 
       - run: npm run build
 
