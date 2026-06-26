@@ -1,12 +1,4 @@
-/**
- * build-channels.mjs
- * Fetches all IPTV playlists from GitHub, dedupes, categorizes,
- * and writes optimized JSON files for fast loading.
- *
- * Run: `npm run build-channels` (auto-runs on `npm install`)
- */
-
-import { writeFileSync, mkdirSync, existsSync } from 'fs'
+import { writeFileSync, mkdirSync, existsSync, readdirSync, unlinkSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -21,8 +13,22 @@ const SOURCES = [
   `${GITHUB_RAW}/fifa.json`,
 ]
 
+// Only keep these 5 categories
+const ALLOWED_GROUPS = [
+  'fifa', 'world cup',
+  'sports', 'sport',
+  'bangla', 'bangladesh',
+  'india', 'indian',
+  'pakistan', 'pakistani',
+]
+
+function isAllowed(group) {
+  const lower = (group || '').toLowerCase()
+  return ALLOWED_GROUPS.some(kw => lower.includes(kw))
+}
+
 async function fetchJSON(url) {
-  const res = await fetch(url, { headers: { 'User-Agent': 'WatchFree-Build/1.0' } })
+  const res = await fetch(url, { headers: { 'User-Agent': 'Freemium-Build/1.0' } })
   if (!res.ok) throw new Error(`HTTP ${res.status} ${url}`)
   return res.json()
 }
@@ -36,21 +42,6 @@ function dedupe(channels) {
     seen.add(key)
     return true
   })
-}
-
-function categorize(channels) {
-  const map = new Map()
-  for (const ch of channels) {
-    const g = ch.group || 'Uncategorized'
-    if (!map.has(g)) map.set(g, [])
-    map.get(g).push({ name: ch.name, logo: ch.logo || '', url: ch.url, group: g })
-  }
-  const groups = []
-  for (const [name, chs] of map) {
-    groups.push({ name, count: chs.length, channels: chs })
-  }
-  groups.sort((a, b) => b.count - a.count)
-  return groups
 }
 
 async function main() {
@@ -70,29 +61,20 @@ async function main() {
   }
 
   const deduped = dedupe(allChannels)
-  console.log(`\n  raw: ${allChannels.length}, deduped: ${deduped.length}`)
+  const filtered = deduped.filter(ch => isAllowed(ch.group))
+  console.log(`\n  raw: ${allChannels.length}, deduped: ${deduped.length}, filtered: ${filtered.length}`)
 
-  const groups = categorize(deduped)
-  const categories = groups.map((g) => g.name)
-  const total = deduped.length
-
-  // Full index (categories only, no channel data for size)
-  writeFileSync(
-    join(DATA_DIR, 'channels-index.json'),
-    JSON.stringify({ groups: groups.map(({ name, count }) => ({ name, count })), categories, total })
-  )
-  console.log(`  wrote channels-index.json (${groups.length} categories)`)
-
-  // Flat all-channels array for fast "All" pagination
-  writeFileSync(join(DATA_DIR, 'channels-all.json'), JSON.stringify(deduped))
-  console.log(`  wrote channels-all.json (${deduped.length} channels)`)
-
-  // Per-category files for fast drill-down
-  for (const g of groups) {
-    const key = g.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()
-    writeFileSync(join(DATA_DIR, `cat_${key}.json`), JSON.stringify(g.channels))
+  // Clean old files
+  for (const f of readdirSync(DATA_DIR)) {
+    if (f === 'channels.db' || f === 'channels.db-wal' || f === 'channels.db-shm' ||
+        f.startsWith('cat_') || f === 'channels-index.json' || f === 'watch-store.json') {
+      unlinkSync(join(DATA_DIR, f))
+    }
   }
-  console.log(`  wrote ${groups.length} category files`)
+
+  // Write only channels-all.json
+  writeFileSync(join(DATA_DIR, 'channels-all.json'), JSON.stringify(filtered))
+  console.log(`  wrote channels-all.json (${filtered.length} channels)`)
 
   console.log('\nDone.')
 }
